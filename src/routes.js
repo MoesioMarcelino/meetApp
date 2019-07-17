@@ -22,5 +22,6 @@ routes.use(authMiddleware);
 routes.post('/files', uploads.single('file'), FileController.store);
 
 routes.post('/meetups', MeetupController.store);
+routes.get('/meetups', MeetupController.index);
 
 export default routes;

@@ -58,6 +58,18 @@ class MeetupController {
 
     return res.json(meetup);
   }
+
+  async index(req, res) {
+    const meetups = await MeetUp.findAll({ where: { user_id: req.userId } });
+
+    if (meetups.length === 0) {
+      return res
+        .status(400)
+        .json({ error: 'There are no meetups for this user' });
+    }
+
+    return res.json(meetups);
+  }
 }
 
 export default new MeetupController();
