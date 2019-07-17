@@ -70,6 +70,64 @@ class MeetupController {
 
     return res.json(meetups);
   }
+
+  async update(req, res) {
+    const schema = Yup.object().shape({
+      title: Yup.string(),
+      description: Yup.string(),
+      location: Yup.string(),
+      date: Yup.date(),
+      banner_id: Yup.number(),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'Some value is not valid!' });
+    }
+
+    const { date, banner_id } = req.body;
+
+    /**
+     * Check if banner_id exists
+     */
+    const checkBanner = await File.findOne({ where: { id: banner_id } });
+
+    if (!checkBanner) {
+      return res.status(401).json({ error: 'Banner_id is not valid!' });
+    }
+
+    /**
+     * Check date parsed
+     */
+    const checkData = parseISO(date);
+
+    if (isBefore(checkData, new Date())) {
+      return res.status(400).json({ error: 'This date is not valid!' });
+    }
+
+    /**
+     * Check if meetup exists
+     */
+    const meetup = await MeetUp.findOne({
+      where: { id: req.params.idMeetup, user_id: req.userId },
+      attributes: [
+        'id',
+        'title',
+        'description',
+        'location',
+        'date',
+        'user_id',
+        'banner_id',
+      ],
+    });
+
+    if (!meetup) {
+      return res.status(400).json({ error: 'The meetup not exists!' });
+    }
+
+    await meetup.update(req.body);
+
+    return res.json(meetup);
+  }
 }
 
 export default new MeetupController();
