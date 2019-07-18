@@ -42,6 +42,7 @@ class MeetupController {
     /**
      * Check date parsed
      */
+
     const checkData = parseISO(date);
 
     if (isBefore(checkData, new Date())) {
@@ -67,7 +68,7 @@ class MeetupController {
       where: { user_id: req.userId },
       order: ['date'],
       limit: 20,
-      offser: (page - 1) * 20,
+      offset: (page - 1) * 20,
       attributes: ['id', 'title', 'description', 'location', 'date'],
       include: [
         {
@@ -84,9 +85,9 @@ class MeetupController {
     });
 
     if (meetups.length === 0) {
-      return res
-        .status(400)
-        .json({ error: 'There are no meetups for this user' });
+      return res.status(400).json({
+        error: `There are no meetups for this user, in the page ${page}`,
+      });
     }
 
     return res.json(meetups);
@@ -148,6 +149,24 @@ class MeetupController {
     await meetup.update(req.body);
 
     return res.json(meetup);
+  }
+
+  async delete(req, res) {
+    const meetup = await MeetUp.findOne({
+      where: { id: req.params.idMeetup, user_id: req.userId },
+    });
+
+    if (!meetup) {
+      return res.status(400).json({ error: 'Meetup not found!' });
+    }
+
+    if (isBefore(meetup.date, new Date())) {
+      return res.status(401).json({ error: 'This meetup already happened' });
+    }
+
+    await meetup.destroy();
+
+    return res.json();
   }
 }
 
