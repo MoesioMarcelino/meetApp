@@ -12,6 +12,7 @@ class Meetup extends Model {
         date: Sequelize.DATE,
         user_id: Sequelize.INTEGER,
         banner_id: Sequelize.INTEGER,
+        canceled_at: Sequelize.DATE,
       },
       {
         sequelize,
@@ -23,6 +24,7 @@ class Meetup extends Model {
 
   static associate(models) {
     this.belongsTo(models.File, { foreignKey: 'banner_id', as: 'banner' });
+    this.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
   }
 }
 

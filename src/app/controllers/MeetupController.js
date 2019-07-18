@@ -3,6 +3,7 @@ import { isBefore, parseISO } from 'date-fns';
 
 import MeetUp from '../models/Meetup';
 import File from '../models/File';
+import User from '../models/User';
 
 class MeetupController {
   async store(req, res) {
@@ -60,7 +61,27 @@ class MeetupController {
   }
 
   async index(req, res) {
-    const meetups = await MeetUp.findAll({ where: { user_id: req.userId } });
+    const { page = 1 } = req.query;
+
+    const meetups = await MeetUp.findAll({
+      where: { user_id: req.userId },
+      order: ['date'],
+      limit: 20,
+      offser: (page - 1) * 20,
+      attributes: ['id', 'title', 'description', 'location', 'date'],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
+          model: File,
+          as: 'banner',
+          attributes: ['id', 'url', 'path'],
+        },
+      ],
+    });
 
     if (meetups.length === 0) {
       return res
