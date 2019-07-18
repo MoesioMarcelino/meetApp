@@ -3,21 +3,17 @@ import * as Yup from 'yup';
 
 import Subscription from '../models/Subscription';
 import Meetup from '../models/Meetup';
+import User from '../models/User';
+
+import Queue from '../../lib/Queue';
+import SubscriptionMail from '../jobs/SubscriptionsMail';
 
 class SubscriptionController {
   async store(req, res) {
-    const schema = Yup.object().shape({
-      meetup_id: Yup.number().required(),
-    });
+    const { meetupId } = req.params;
 
-    if (!(await schema.isValid(req.body))) {
-      return res.status(401).json({ error: 'Some value is not valid!' });
-    }
-
-    const { meetup_id } = req.body;
-
-    const meetup = await Meetup.findOne({
-      where: { id: meetup_id },
+    const meetup = await Meetup.findByPk(meetupId, {
+      include: [{ model: User, as: 'user' }],
     });
 
     if (!meetup) {
@@ -63,8 +59,15 @@ class SubscriptionController {
     }
 
     const subscription = await Subscription.create({
-      meetup_id,
+      meetup_id: meetupId,
       user_id: req.userId,
+    });
+
+    const user = await User.findByPk(req.userId);
+
+    await Queue.add(SubscriptionMail.key, {
+      user,
+      meetup,
     });
 
     return res.json(subscription);
