@@ -65,6 +65,37 @@ class MeetupController {
     const { page = 1 } = req.query;
 
     const meetups = await MeetUp.findAll({
+      order: ['date'],
+      limit: 20,
+      offset: (page - 1) * 20,
+      attributes: ['id', 'title', 'description', 'location', 'date'],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
+          model: File,
+          as: 'banner',
+          attributes: ['id', 'url', 'path'],
+        },
+      ],
+    });
+
+    if (meetups.length === 0) {
+      return res.status(400).json({
+        error: `There are no meetups for this user, in the page ${page}`,
+      });
+    }
+
+    return res.json(meetups);
+  }
+
+  async show(req, res) {
+    const { page = 1 } = req.query;
+
+    const meetups = await MeetUp.findAll({
       where: { user_id: req.userId },
       order: ['date'],
       limit: 20,
