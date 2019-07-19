@@ -10,15 +10,22 @@ const models = [User, File, Meetup, Subscription];
 
 class Database {
   constructor() {
+    this.connection = new Sequelize(databaseConfig);
+
     this.init();
+    this.associate();
   }
 
   init() {
-    this.connection = new Sequelize(databaseConfig);
+    models.forEach(model => model.init(this.connection));
+  }
 
-    models
-      .map(model => model.init(this.connection))
-      .map(model => model.associate && model.associate(this.connection.models));
+  associate() {
+    models.forEach(model => {
+      if (model.associate) {
+        model.associate(this.connection.models);
+      }
+    });
   }
 }
 

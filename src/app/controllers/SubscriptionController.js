@@ -1,18 +1,18 @@
 import { isBefore } from 'date-fns';
-import * as Yup from 'yup';
+import { Op } from 'sequelize';
 
 import Subscription from '../models/Subscription';
 import Meetup from '../models/Meetup';
 import User from '../models/User';
+import File from '../models/File';
 
 import Queue from '../../lib/Queue';
 import SubscriptionMail from '../jobs/SubscriptionsMail';
 
 class SubscriptionController {
   async store(req, res) {
-    const { meetupId } = req.params;
-
-    const meetup = await Meetup.findByPk(meetupId, {
+    const user = await User.findByPk(req.userId);
+    const meetup = await Meetup.findByPk(req.params.meetupId, {
       include: [{ model: User, as: 'user' }],
     });
 
@@ -59,18 +59,58 @@ class SubscriptionController {
     }
 
     const subscription = await Subscription.create({
-      meetup_id: meetupId,
+      meetup_id: req.params.meetupId,
       user_id: req.userId,
     });
 
-    const user = await User.findByPk(req.userId);
-
     await Queue.add(SubscriptionMail.key, {
-      user,
       meetup,
+      user,
     });
 
     return res.json(subscription);
+  }
+
+  async show(req, res) {
+    const subscriptions = await Subscription.findAll({
+      where: { user_id: req.userId },
+      attributes: ['id'],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
+          model: Meetup,
+          as: 'meetup',
+          where: {
+            date: {
+              [Op.gt]: new Date(),
+            },
+          },
+          required: true,
+          order: ['date'],
+          attributes: [
+            'id',
+            'title',
+            'description',
+            'location',
+            'date',
+            'past',
+          ],
+          include: [
+            {
+              model: File,
+              as: 'banner',
+              attributes: ['url', 'id', 'path'],
+            },
+          ],
+        },
+      ],
+    });
+
+    return res.json(subscriptions);
   }
 }
 

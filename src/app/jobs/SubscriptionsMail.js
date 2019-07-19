@@ -1,6 +1,3 @@
-import { format, parseISO } from 'date-fns';
-import pt from 'date-fns/locale/pt';
-
 import Mail from '../../lib/Mail';
 
 class SubscriptionMail {
@@ -14,18 +11,14 @@ class SubscriptionMail {
     console.log('O e-mail foi enviado!');
 
     await Mail.sendEmail({
-      to: `${user.name} <${user.email}>`,
+      to: `${meetup.User.name} <${meetup.User.email}>`,
       subject: 'Nova inscrição',
       template: 'subscription',
       context: {
-        manager: user.name,
+        manager: meetup.User.name,
+        meetup: meetup.title,
         user: user.name,
-        event: meetup.title,
-        date: format(
-          parseISO(meetup.date),
-          "'dia' dd 'de' MMMM', às' H:mm'h'",
-          { locale: pt }
-        ),
+        email: user.email,
       },
     });
   }

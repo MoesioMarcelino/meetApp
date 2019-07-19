@@ -1,5 +1,6 @@
 import * as Yup from 'yup';
-import { isBefore, parseISO } from 'date-fns';
+import { isBefore, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { Op } from 'sequelize';
 
 import MeetUp from '../models/Meetup';
 import File from '../models/File';
@@ -63,12 +64,18 @@ class MeetupController {
 
   async index(req, res) {
     const { page = 1 } = req.query;
+    const searchDate = parseISO(req.query.date);
 
     const meetups = await MeetUp.findAll({
+      where: {
+        date: {
+          [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
+        },
+      },
       order: ['date'],
-      limit: 20,
-      offset: (page - 1) * 20,
-      attributes: ['id', 'title', 'description', 'location', 'date'],
+      limit: 10,
+      offset: (page - 1) * 10,
+      attributes: ['id', 'title', 'description', 'location', 'date', 'past'],
       include: [
         {
           model: User,
@@ -161,7 +168,7 @@ class MeetupController {
      * Check if meetup exists
      */
     const meetup = await MeetUp.findOne({
-      where: { id: req.params.idMeetup, user_id: req.userId },
+      where: { id: req.params.idMeetup },
       attributes: [
         'id',
         'title',
@@ -172,6 +179,10 @@ class MeetupController {
         'banner_id',
       ],
     });
+
+    if (meetup.user_id !== req.userId) {
+      return res.status(400).json({ error: 'Not authorized!' });
+    }
 
     if (!meetup) {
       return res.status(400).json({ error: 'The meetup not exists!' });
