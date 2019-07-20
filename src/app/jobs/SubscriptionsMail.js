@@ -11,12 +11,12 @@ class SubscriptionMail {
     console.log('O e-mail foi enviado!');
 
     await Mail.sendEmail({
-      to: `${meetup.User.name} <${meetup.User.email}>`,
+      to: `${meetup.user.name} <${meetup.user.email}>`,
       subject: 'Nova inscrição',
       template: 'subscription',
       context: {
-        manager: meetup.User.name,
-        meetup: meetup.title,
+        manager: meetup.user.name,
+        event: meetup.title,
         user: user.name,
         email: user.email,
       },
